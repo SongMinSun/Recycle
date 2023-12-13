@@ -1,10 +1,72 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-<meta charset="EUC-KR">
-<title>Insert title here</title>
+  <meta charset="EUC-KR">
+  <title>헷갈리는 분리배출 안내 서비스</title>
+  <style>
+    html, body {
+      height: 100vh;
+      margin: 0;
+      overflow: hidden; /* 스크롤 제거 */
+    }
+
+    header {
+      background-color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .webcam-container {
+      float: left;
+      width: 50%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    video {
+      transform: scaleX(-1);
+      width: 50%; /* 웹캠 비디오의 너비를 50%로 설정 */
+    }
+
+    .image-container {
+      float: right;
+      width: 40%;
+      height:70%;
+      text-align: center;
+    }
+
+    .image-container img {
+      width: 100%; /* 이미지의 너비를 100%로 조절 */
+      height:80%;
+      max-width: 80%; /* 이미지가 너무 크지 않도록 최대 너비 설정 */
+    }
+  </style>
 </head>
 <body>
+  <header>
+    <img src="logo.png" alt="title" width="320" height="120">
+  </header>
 
+  <div class="webcam-container">
+    <video id="webcam" class="wc" autoplay playsinline></video>
+  </div>
+
+  <div class="image-container">
+    <img src="ice.png" alt="ice">
+  </div>
+
+  <script>
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(function (stream) {
+        var video = document.getElementById('webcam');
+        video.srcObject = stream;
+        video.play();
+      })
+      .catch(function (error) {
+        console.error('웹캠 액세스 중 오류 발생:', error);
+      });
+  </script>
 </body>
 </html>
