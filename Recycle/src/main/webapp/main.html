@@ -33,14 +33,24 @@
     .image-container {
       float: right;
       width: 40%;
-      height:70%;
+      height: 70%;
       text-align: center;
     }
 
     .image-container img {
       width: 100%; /* 이미지의 너비를 100%로 조절 */
-      height:80%;
+      height: 80%;
       max-width: 80%; /* 이미지가 너무 크지 않도록 최대 너비 설정 */
+    }
+
+    .button-container {
+      text-align: center;
+      padding: 20px;
+    }
+
+    button {
+      padding: 10px;
+      font-size: 16px;
     }
   </style>
 </head>
@@ -51,6 +61,9 @@
 
   <div class="webcam-container">
     <video id="webcam" class="wc" autoplay playsinline></video>
+    <div class="button-container">
+      <button onclick="handleButtonClick()">버튼 클릭</button>
+    </div>
   </div>
 
   <div class="image-container">
@@ -67,6 +80,11 @@
       .catch(function (error) {
         console.error('웹캠 액세스 중 오류 발생:', error);
       });
+
+    function handleButtonClick() {
+      console.log('버튼이 클릭되었습니다.');
+      // 원하는 동작을 여기에 추가
+    }
   </script>
 </body>
 </html>
