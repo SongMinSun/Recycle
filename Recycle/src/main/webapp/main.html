@@ -1,90 +1,249 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
-  <meta charset="EUC-KR">
-  <title>�򰥸��� �и����� �ȳ� ����</title>
-  <style>
-    html, body {
-      height: 100vh;
-      margin: 0;
-      overflow: hidden; /* ��ũ�� ���� */
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>헷갈리는 분리배출 안내 서비스</title>
+    <style>
+        #webcam {
+            transform: scaleX(-1);
+        }
 
-    header {
-      background-color: white;
-      padding: 30px;
-      text-align: center;
-    }
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow-y: scroll;
+        }
 
-    .webcam-container {
-      float: left;
-      width: 50%;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+        header {
+            background-color: white;
+            padding: 30px;
+            text-align: center;
+        }
 
-    video {
-      transform: scaleX(-1);
-      width: 50%; /* ��ķ ������ �ʺ� 50%�� ���� */
-    }
+        .webcam-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            float: right;
+            width: 50%;
+            flex-direction: column;
+        }
 
-    .image-container {
-      float: right;
-      width: 40%;
-      height: 70%;
-      text-align: center;
-    }
+        .wc {
+            width: 300px;
+            height: 300px;
+        }
 
-    .image-container img {
-      width: 100%; /* �̹����� �ʺ� 100%�� ���� */
-      height: 80%;
-      max-width: 80%; /* �̹����� �ʹ� ũ�� �ʵ��� �ִ� �ʺ� ���� */
-    }
+        .image-container {
+            float: right;
+            width: 40%;
+            height: 70%;
+            text-align: center;
+        }
 
-    .button-container {
-      text-align: center;
-      padding: 20px;
-    }
+        .image-container img {
+            width: 100%;
+            height: 80%;
+            max-width: 80%;
+            display: none;
+        }
 
-    button {
-      padding: 10px;
-      font-size: 16px;
-    }
-  </style>
+        .image-container img.initial-image {
+            display: block;
+        }
+
+        .button-container {
+            text-align: center;
+            padding: 20px;
+        }
+
+        button {
+            padding: 10px;
+            font-size: 16px;
+        }
+    </style>
 </head>
+
 <body>
-  <header>
-    <img src="logo.png" alt="title" width="320" height="120">
-  </header>
+    <header>
+        <img src="logo.png" alt="title" width="320" height="120">
+    </header>
 
-  <div class="webcam-container">
-    <video id="webcam" class="wc" autoplay playsinline></video>
-    <div class="button-container">
-      <button onclick="handleButtonClick()">��ư Ŭ��</button>
+    <div class="webcam-container">
+        <div id="webcam-container" class="wc"></div>
+        <div id="label-container"></div>
+        <div class="button-container">
+            <button onclick="handleButtonClick()">시작하기</button>
+        </div>
     </div>
-  </div>
 
-  <div class="image-container">
-    <img src="ice.png" alt="ice">
-  </div>
+    <div class="image-container" id="image-container">
+        <!-- 초기 이미지 -->
+        <!-- 각 클래스에 대한 이미지 요소 추가 -->
+        <img id="Battery-image" src="Battery.png" alt="Bettery">
+        <img id="Cotton doll-image" src="Cotton doll.png" alt="Cotton doll">
+        <img id="Hanger-image" src="Hanger.png" alt="Hanger">
+        <img id="Icepack-image" src="Icepack.png" alt="Icepack">
+        <img id="Knife-image" src="Knife.png" alt="Knife">
+        <img id="Lotion-image" src="Lotion.png" alt="Lotion">
+        <img id="Medicine-image" src="Medicine.png" alt="Medicine">
+        <img id="Perfume-image" src="Perfume.png" alt="Perfume">
+        <img id="Pot-image" src="Pot.png" alt="Pot">
+        <img id="Scissors-image" src="Scissors.png" alt="Scissors">
+        <img id="Umbrella-image" src="Umbrella.png" alt="Umbrella">
+    </div>
 
-  <script>
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(function (stream) {
-        var video = document.getElementById('webcam');
-        video.srcObject = stream;
-        video.play();
-      })
-      .catch(function (error) {
-        console.error('��ķ �׼��� �� ���� �߻�:', error);
-      });
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <script type="text/javascript">
+        const URL = "./model/";
+        let model, webcam, labelContainer, maxPredictions;
+        let isWebcamPlaying = false;
+        let lastPrediction;
 
-    function handleButtonClick() {
-      console.log('��ư�� Ŭ���Ǿ����ϴ�.');
-      // ���ϴ� ������ ���⿡ �߰�
-    }
-  </script>
+        async function init() {
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+
+            model = await tmImage.load(modelURL, metadataURL);
+            maxPredictions = model.getTotalClasses();
+
+            const flip = true;
+            webcam = new tmImage.Webcam(300, 300, flip);
+
+            // 웹캠 초기화 기다리기
+            await webcam.setup();
+
+            document.getElementById("webcam-container").appendChild(webcam.canvas);
+            labelContainer = document.getElementById("label-container");
+            for (let i = 0; i < maxPredictions; i++) {
+                labelContainer.appendChild(document.createElement("div"));
+            }
+        }
+
+        async function loop() {
+            webcam.update();
+            await predict();
+            if (isWebcamPlaying) {
+                window.requestAnimationFrame(loop);
+            }
+        }
+
+        async function predict() {
+            const prediction = await model.predict(webcam.canvas);
+
+            let maxProbability = 0;
+            let predictedClass = '';
+
+            prediction.forEach((classPrediction) => {
+                if (classPrediction.probability > maxProbability) {
+                    maxProbability = classPrediction.probability;
+                    predictedClass = classPrediction.className;
+                }
+            });
+
+            const classPrediction = predictedClass + ": " + maxProbability.toFixed(2);
+            labelContainer.innerHTML = classPrediction;
+
+            // 예측된 클래스가 변경되면 이미지 표시
+            if (lastPrediction !== predictedClass) {
+                displayImage(predictedClass);
+                lastPrediction = predictedClass;
+            }
+        }
+
+        function displayImage(className) {
+            const imageContainer = document.getElementById("image-container");
+            if (!imageContainer) {
+                console.error("이미지 컨테이너를 찾을 수 없습니다.");
+                return;
+            }
+
+            const classImages = {
+                'Battery': 'Battery.png',
+                'Cotton doll': 'Cotton doll.png',
+                'Hanger': 'Hanger.png',
+                'Icepack': 'Icepack.png',
+                'Knife': 'Knife.png',
+                'Lotion': 'Lotion.png',
+                'Medicine': 'Medicine.png',
+                'Perfume': 'Perfume.png',
+                'Pot': 'Pot.png',
+                'Scissors': 'Scissors.png',
+                'Umbrella': 'Umbrella.png',
+            };
+
+            const imageSrc = classImages[className];
+            if (imageSrc) {
+                Object.keys(classImages).forEach(key => {
+                    const currentImage = document.getElementById(`${key}-image`);
+                    if (currentImage) {
+                        currentImage.style.display = 'none';
+                    } else {
+                        console.error(`${key}에 대한 이미지 엘리먼트를 찾을 수 없습니다.`);
+                    }
+                });
+
+                // 웹캠이 작동 중이고 마지막 예측값이 없으면 초기 이미지 표시
+                if (isWebcamPlaying && !lastPrediction) {
+                    const initialImage = document.querySelector(".initial-image");
+                    if (initialImage) {
+                        initialImage.style.display = 'block';
+                    } else {
+                        console.error("초기 이미지 엘리먼트를 찾을 수 없습니다.");
+                    }
+                }
+
+                // 웹캠이 작동 중이면 예측된 클래스에 해당하는 이미지를 표시합니다.
+                if (isWebcamPlaying && lastPrediction) {
+                    const targetImage = document.getElementById(`${className}-image`);
+                    if (targetImage) {
+                        targetImage.style.display = 'block';
+                    } else {
+                        console.error(`${className}에 대한 이미지 엘리먼트를 찾을 수 없습니다.`);
+                    }
+                }
+            } else {
+                console.error(`${className}에 대한 이미지 소스를 찾을 수 없습니다.`);
+            }
+        }
+
+        async function handleButtonClick() {
+            const button = document.querySelector("button");
+
+            // 초기화 확인 추가
+            if (!webcam) {
+                console.error("웹캠이 초기화되지 않았습니다. 초기화가 완료될 때까지 기다려주세요.");
+                return;
+            }
+
+            if (!isWebcamPlaying) {
+                await webcam.play();
+                isWebcamPlaying = true;
+                loop();
+                button.innerText = '예측';
+                console.log('웹캠이 시작되었습니다.');
+            } else {
+                await webcam.pause();
+                isWebcamPlaying = false;
+                button.innerText = '다시 시작';
+
+                // 이미지 표시 코드를 주석처리하여 항상 마지막 예측값의 이미지를 표시합니다.
+                // if (lastPrediction) {
+                //     displayImage(lastPrediction);
+                // }
+
+                console.log('웹캠이 일시 정지되었습니다.');
+            }
+        }
+
+        window.onload = async function () {
+            await init(); // 웹캠 초기화가 완료될 때까지 기다립니다.
+            handleButtonClick();
+        };
+    </script>
 </body>
+
 </html>
