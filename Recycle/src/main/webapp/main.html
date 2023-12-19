@@ -17,14 +17,14 @@
         
         body{
         	overflow-y: scroll;
-        	 background-image : url("back.png");
+        	background-image : url("back.png");
         }
 
         header {
             background-color: white;
             padding: 30px;
             text-align: center;
-             background-image : url("back.png");
+            background-image : url("back.png");
         }
 
         .webcam-container {
@@ -43,19 +43,21 @@
         }
 
         .image-container {
-            float: right;
-            width: 40%;
-            height: 70%;
-            text-align: center;
-            margin-top: 15px;
-        }
+        	float: right;
+        	margin-left: 90px; 
+        	width: 40%;
+        	height: 70%;
+        	text-align: center;
+        	margin-top: 15px;
+    	}
 
-        .image-container img {
-            width: 100%;
-            height: 100%;
-            max-width: 80%;
-            display: none;
-        }
+    	.image-container img {
+        	width: 100%;
+       	 	height: 100%;
+        	max-width: 80%;
+        	display: none;
+        	margin-left: 90px; /* Adjust the margin-right as needed for individual images */
+    	}
 
         .button-container {
             text-align: center;
@@ -75,6 +77,7 @@
         <img src="logo.png" alt="title" width="320" height="120">
     </header>
 
+    <!-- 웹캠 및 예측 결과를 표시하는 컨테이너 -->
     <div class="webcam-container">
         <div id="webcam-container" class="wc"></div>
         <div id="label-container"></div>
@@ -83,9 +86,9 @@
         </div>
     </div>
 
+    <!-- 예측된 클래스에 따라 이미지를 표시하는 컨테이너 -->
     <div class="image-container" id="image-container">
         <!-- 각 클래스에 대한 이미지 요소 추가 -->
-         <img id="Battery-image" src="Battery.png" alt="Bettery">
         <img id="Cotton doll-image" src="Cotton doll.png" alt="Cotton doll">
         <img id="Hanger-image" src="Hanger.png" alt="Hanger">
         <img id="Icepack-image" src="Icepack.png" alt="Icepack">
@@ -96,21 +99,26 @@
         <img id="Pot-image" src="Pot.png" alt="Pot">
         <img id="Scissors-image" src="Scissors.png" alt="Scissors">
         <img id="Umbrella-image" src="Umbrella.png" alt="Umbrella">
-        <!-- Add other images for different classes -->
+        <!-- 다른 클래스에 대한 이미지 추가 -->
     </div>
 
+    <!-- TensorFlow.js 및 Teachable Machine 라이브러리 로드 -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
-    <script type="text/javascript">
-        const URL = "./model/";
-        let model, webcam, labelContainer, maxPredictions;
-        let isWebcamPlaying = false;
-        let lastPrediction;
 
+    <!-- 자바스크립트 코드 -->
+    <script type="text/javascript">
+        const URL = "./model/"; // 모델 파일이 있는 디렉토리 경로
+        let model, webcam, labelContainer, maxPredictions;
+        let isWebcamPlaying = false; // 웹캠 상태를 나타내는 변수
+        let lastPrediction; // 마지막으로 예측된 클래스를 저장하는 변수
+
+        // 초기화 함수
         async function init() {
             const modelURL = URL + "model.json";
             const metadataURL = URL + "metadata.json";
 
+            // Teachable Machine 모델 로드
             model = await tmImage.load(modelURL, metadataURL);
             maxPredictions = model.getTotalClasses();
 
@@ -120,13 +128,17 @@
             // 웹캠 초기화 기다리기
             await webcam.setup();
 
+            // 웹캠 컨테이너에 캔버스 추가
             document.getElementById("webcam-container").appendChild(webcam.canvas);
             labelContainer = document.getElementById("label-container");
+
+            // 예측 결과를 표시할 레이블 컨테이너 초기화
             for (let i = 0; i < maxPredictions; i++) {
                 labelContainer.appendChild(document.createElement("div"));
             }
         }
 
+        // 웹캠에서 프레임을 계속해서 업데이트하고 예측 함수 호출
         async function loop() {
             webcam.update();
             await predict();
@@ -135,12 +147,14 @@
             }
         }
 
+        // Teachable Machine 모델을 사용하여 예측
         async function predict() {
             const prediction = await model.predict(webcam.canvas);
 
             let maxProbability = 0;
             let predictedClass = '';
 
+            // 예측 결과 중 가장 높은 확률의 클래스 찾기
             prediction.forEach((classPrediction) => {
                 if (classPrediction.probability > maxProbability) {
                     maxProbability = classPrediction.probability;
@@ -148,6 +162,7 @@
                 }
             });
 
+            // 예측 결과를 레이블 컨테이너에 표시
             const classPrediction = predictedClass + ": " + maxProbability.toFixed(2);
             labelContainer.innerHTML = classPrediction;
 
@@ -158,6 +173,7 @@
             }
         }
 
+        // 예측된 클래스에 해당하는 이미지를 표시하는 함수
         function displayImage(className) {
             const imageContainer = document.getElementById("image-container");
             if (!imageContainer) {
@@ -170,22 +186,23 @@
                 return;
             }
 
+            // 클래스에 대한 이미지 경로 매핑
             const classImages = {
-            		 'Battery': 'Battery.png',
-                     'Cotton doll': 'Cotton doll.png',
-                     'Hanger': 'Hanger.png',
-                     'Icepack': 'Icepack.png',
-                     'Knife': 'Knife.png',
-                     'Lotion': 'Lotion.png',
-                     'Medicine': 'Medicine.png',
-                     'Perfume': 'Perfume.png',
-                     'Pot': 'Pot.png',
-                     'Scissors': 'Scissors.png',
-                     'Umbrella': 'Umbrella.png',
+                'Cotton doll': 'Cotton doll.png',
+                'Hanger': 'Hanger.png',
+                'Icepack': 'Icepack.png',
+                'Knife': 'Knife.png',
+                'Lotion': 'Lotion.png',
+                'Medicine': 'Medicine.png',
+                'Perfume': 'Perfume.png',
+                'Pot': 'Pot.png',
+                'Scissors': 'Scissors.png',
+                'Umbrella': 'Umbrella.png',
             };
 
             const imageSrc = classImages[className];
             if (imageSrc) {
+                // 모든 이미지 숨기기
                 Object.keys(classImages).forEach(key => {
                     const currentImage = document.getElementById(`${key}-image`);
                     if (currentImage) {
@@ -207,19 +224,21 @@
             }
         }
 
+        // 버튼 클릭 이벤트 핸들러
         async function handleButtonClick() {
             const button = document.querySelector("button");
 
-            // 초기화 확인 추가
+            // 웹캠이 초기화되지 않았을 경우 에러 처리
             if (!webcam) {
                 console.error("웹캠이 초기화되지 않았습니다. 초기화가 완료될 때까지 기다려주세요.");
                 return;
             }
 
+            // 웹캠이 작동 중이지 않으면 시작, 작동 중이면 일시 정지
             if (!isWebcamPlaying) {
                 await webcam.play();
                 isWebcamPlaying = true;
-                loop();
+                loop(); // 프레임 업데이트 루프 시작
                 button.innerText = '예측';
                 console.log('웹캠이 시작되었습니다.');
             } else {
@@ -227,7 +246,7 @@
                 isWebcamPlaying = false;
                 button.innerText = '다시 시작';
 
-                // 웹캠이 멈췄을 때만 이미지 표시
+                // 웹캠이 멈췄을 때만 마지막 예측 결과에 해당하는 이미지 표시
                 if (lastPrediction) {
                     displayImage(lastPrediction);
                 }
@@ -236,9 +255,10 @@
             }
         }
 
+        // 페이지 로딩 시 초기화 함수 호출
         window.onload = async function () {
             await init(); // 웹캠 초기화가 완료될 때까지 기다립니다.
-            handleButtonClick();
+            handleButtonClick(); // 초기화 후 자동으로 웹캠 시작
         };
     </script>
 </body>
